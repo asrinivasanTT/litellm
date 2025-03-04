@@ -106,6 +106,8 @@ def _get_parent_otel_span_from_kwargs(
 
 def process_response_headers(response_headers: Union[httpx.Headers, dict]) -> dict:
     from litellm.types.utils import OPENAI_RESPONSE_HEADERS
+    import os
+    PASSTHROUGH_LLM_PROVIDER_HEADERS = os.environ.get("PASSTHROUGH_LLM_PROVIDER_HEADERS", "").split(",")
 
     openai_headers = {}
     processed_headers = {}
@@ -114,6 +116,8 @@ def process_response_headers(response_headers: Union[httpx.Headers, dict]) -> di
     for k, v in response_headers.items():
         if k in OPENAI_RESPONSE_HEADERS:  # return openai-compatible headers
             openai_headers[k] = v
+        if k.startswith("llm_provider-") and k[len("llm_provider-"):] in PASSTHROUGH_LLM_PROVIDER_HEADERS:
+            additional_headers[k[len("llm_provider-"):]] = v
         if k.startswith(
             "llm_provider-"
         ):  # return raw provider headers (incl. openai-compatible ones)
